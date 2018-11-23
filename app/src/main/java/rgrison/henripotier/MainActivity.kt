@@ -1,7 +1,9 @@
 package rgrison.henripotier
 
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.ListView
 import retrofit2.Call
 import retrofit2.Callback
@@ -12,31 +14,34 @@ import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
+    private var adapter: BookAdapter? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Plant logger cf. Android Timber
+        adapter = BookAdapter(emptyList(), this)
+
         Timber.plant(Timber.DebugTree());
 
-        // TODO build Retrofit
         val retrofit = Retrofit.Builder()
                 .baseUrl("http://henri-potier.xebia.fr")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
 
-        // TODO create a service
         val bookService = retrofit.create(HenriPotierService::class.java)
 
-        // TODO listBooks()
+        // création des appels pour récupérer les livres
         val booksCalls = bookService.listBooks()
 
-
-        val adapter: BookAdapter = BookAdapter(emptyList(), this)
         val listView: ListView = findViewById(R.id.bookListView)
         listView.adapter = adapter
 
-        // TODO enqueue call and display book title
+        listView.setOnItemClickListener { _, _, position, _ ->
+            this.getDetails(position)
+        }
+
+        // récupération des livres
         booksCalls.enqueue(object: Callback<List<Book>> {
 
             override fun onFailure(call: Call<List<Book>>, t: Throwable) {
@@ -50,10 +55,22 @@ class MainActivity : AppCompatActivity() {
                         Timber.i("Titre : $it")
                     }
 
-                    adapter.setList(books!!)
+                    adapter?.setList(books!!)
                 }
             }
 
         })
     }
+
+
+    fun getDetails(position: Int) {
+        // récupération du livre en utilisant l'indice de la liste
+        val book: Book? = adapter?.getItem(position)
+
+        // démarrage de la nouvelle activité en utilisant l'intent
+        val intent = Intent(this@MainActivity, BookDetailActivity::class.java)
+        intent.putExtra("BOOK", book!!)
+        startActivity(intent)
+    }
+
 }
