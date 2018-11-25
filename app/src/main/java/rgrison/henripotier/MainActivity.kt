@@ -3,7 +3,6 @@ package rgrison.henripotier
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
 import android.widget.ListView
 import retrofit2.Call
 import retrofit2.Callback
@@ -31,43 +30,43 @@ class MainActivity : AppCompatActivity() {
 
         val bookService = retrofit.create(HenriPotierService::class.java)
 
-        // création des appels pour récupérer les livres
+        // création des appels pour récupérer les livres depuis l'API
         val booksCalls = bookService.listBooks()
 
         val listView: ListView = findViewById(R.id.bookListView)
         listView.adapter = adapter
 
         listView.setOnItemClickListener { _, _, position, _ ->
-            this.getDetails(position)
+            this.voirDetails(position)
         }
 
-        // récupération des livres
+        // Récupératoin des livres depuis l'API, ajout dans l'adaptateur pour la ListView
         booksCalls.enqueue(object: Callback<List<Book>> {
 
             override fun onFailure(call: Call<List<Book>>, t: Throwable) {
-                Timber.e("miskine")
+                Timber.e(t, "Erreur lors de la récupération des livres")
             }
 
             override fun onResponse(call: Call<List<Book>>, response: Response<List<Book>>) {
                 val books: List<Book>? = response.body()
                 books.apply {
-                    this?.forEach {
-                        Timber.i("Titre : $it")
-                    }
-
                     adapter?.setList(books!!)
+
+                    this?.forEach {
+                        Timber.i("Titre du livre récupéré : $it")
+                    }
                 }
             }
 
         })
     }
 
-
-    fun getDetails(position: Int) {
+    // Affiche les détails du livre dans une nouvelle activité
+    fun voirDetails(position: Int) {
         // récupération du livre en utilisant l'indice de la liste
         val book: Book? = adapter?.getItem(position)
 
-        // démarrage de la nouvelle activité en utilisant l'intent
+        // démarrage de la nouvelle activité
         val intent = Intent(this@MainActivity, BookDetailActivity::class.java)
         intent.putExtra("BOOK", book!!)
         startActivity(intent)
